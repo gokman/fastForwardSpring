@@ -1,0 +1,51 @@
+buildscript {
+	ext {
+		springBootVersion = '2.0.0.RELEASE'
+	}
+	repositories {
+		mavenCentral()
+	}
+	dependencies {
+		classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
+	}
+}
+
+configurations.all {
+	exclude module: 'slf4j-log4j12'
+}
+
+
+apply plugin: 'java'
+apply plugin: 'eclipse'
+apply plugin: 'org.springframework.boot'
+apply plugin: 'io.spring.dependency-management'
+
+group = 'com.nevitech'
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = 1.8
+
+repositories {
+	mavenCentral()
+}
+
+
+dependencies {
+	compile('org.springframework.boot:spring-boot-starter'){
+		exclude group: 'org.springframework.boot', module: 'spring-boot-starter-logging'
+	}
+	compile('org.springframework.boot:spring-boot-starter-integration')
+	compile('org.springframework.boot:spring-boot-starter-validation')
+	compile('org.springframework.boot:spring-boot-starter-jdbc')
+	runtime('org.postgresql:postgresql')
+	compile('org.apache.spark:spark-core_2.11:2.1.0'){
+		exclude group: 'org.slf4j', module: 'slf4j-log4j1'
+		exclude group: 'log4j', module: 'log4j'
+	}
+	compile('org.scala-lang:scala-library:2.11.11')
+	compile('org.apache.spark:spark-sql_2.11:2.1.0')
+	compile('org.apache.spark:spark-mllib_2.11:2.1.0'){
+		exclude group: 'slf4j-api', module: 'org.slf4j'
+	}
+
+	testCompile('org.springframework.boot:spring-boot-starter-test')
+}
