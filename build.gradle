@@ -24,6 +24,16 @@ group = 'com.nevitech'
 version = '0.0.1-SNAPSHOT'
 sourceCompatibility = 1.8
 
+allprojects {
+	configurations.all {
+		resolutionStrategy {
+			dependencySubstitution {
+				substitute module('io.netty:netty-all') with module('io.netty:netty-all:4.0.42.Final')
+			}
+		}
+	}
+}
+
 repositories {
 	mavenCentral()
 	maven{
