@@ -73,12 +73,33 @@ public class LibSvmFileGenerator {
             "  from mss_playground.feature_set_extended\n" +
             "  order by class_assignee";
 
+    final static String query_jira_172_word_features = "select class_assignee, reporter, priority, issue_type, w1, w2,w3, w4, w5, w6, w7, w8, w9, w10, w11, w12, w14, w15, w16, w17, w18, w19, w20, w21, w22, w23, w24, w26, w28, w30, \n" +
+            "w31, w32, w33, w35, w36, w37, w39, w40, w45, w46, w47, w48, w49, w50, w51, w52, w53, w54, w55, w56, w57, w58, w59, w60, w61, w62, w63, w65, w66, w67, w69, \n" +
+            "w70, w71, w73, w74, w75, w76, w77, w78, w80, w81, w82, w84, w86, w87, w88, w90, w91, w92, w93, w94, w95, w96, w97, w98, w100, w101, w102, w103, w104, w105, w106, \n" +
+            "w107, w108, w109, w110, w111, w112, w113, w114, w115, w116, w117, w118, w119, w120, w121, w122, w123, w125, w126, w127, w129, w130, w133, w134, w135, w136, w137, w138, \n" +
+            "w140, w141, w142, w143, w144, w145, w146, w147, w148, w149, w151, w153, w154, w155, w156, w157, w158, w159, w162, w163, w164, w165, w166, w167, w168, w169, w170, \n" +
+            "w171, w172 \n" +
+            "from mss_playground.feature_set_extended_jira";
+
+    final static String query_jira_60_word_features = "select class_assignee, reporter, priority, issue_type, w1, w2,w3, w4, w5, w6, " +
+            "w7, w8, w9, w10, w11, w12, w14, w15, w16, w17, w18, w19, w20, w21, w22, w23, w24, w26, w28, w30, \n" +
+            "w31, w32, w33, w35, w36, w37, w39, w40, w45, w46, w47, w48, w49, w50, w51, w52, w53, w54, w55, " +
+            "w56, w57, w58, w59, w60, w61, w62, w63, w65, w66, w67, w69 \n" +
+            "from mss_playground.feature_set_extended_jira ej, raw_dataset_last_year ly "+
+            "where ej.task_key=ly.task_key";
+
+
+    final static String query_jira_3_word_features = "select class_assignee, reporter, priority, issue_type " +
+            "from mss_playground.feature_set_extended_jira";
+
+
+
 
     public void generateSvmFile(){
 
-        try (PrintWriter writer = new PrintWriter("fastForward_libsvm_file_46_features.txt", "UTF-8")){
+        try (PrintWriter writer = new PrintWriter("fastForward_libsvm_file_jira_60_features.txt", "UTF-8")){
 
-            SqlRowSet list = jdbcTemplate.queryForRowSet(LibSvmFileGenerator.query_46_features);
+            SqlRowSet list = jdbcTemplate.queryForRowSet(LibSvmFileGenerator.query_jira_60_word_features);
 
             String line = "";
             while(list.next()){

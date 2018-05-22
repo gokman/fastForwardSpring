@@ -26,6 +26,9 @@ sourceCompatibility = 1.8
 
 repositories {
 	mavenCentral()
+	maven{
+		url "https://raw.github.com/ahmetaa/maven-repo/master"
+	}
 }
 
 
@@ -47,5 +50,18 @@ dependencies {
 		exclude group: 'slf4j-api', module: 'org.slf4j'
 	}
 
+	compile ('zemberek-nlp:zemberek-morphology:0.12.0')
+
 	testCompile('org.springframework.boot:spring-boot-starter-test')
+}
+
+
+allprojects {
+	configurations.all {
+		resolutionStrategy {
+			dependencySubstitution {
+				substitute module('io.netty:netty-all') with module('io.netty:netty-all:4.0.42.Final')
+			}
+		}
+	}
 }
