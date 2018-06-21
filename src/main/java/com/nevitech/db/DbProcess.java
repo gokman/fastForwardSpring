@@ -1,11 +1,14 @@
 package com.nevitech.db;
 
+import com.nevitech.nlp.TurkishDeasciifier;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -24,11 +27,14 @@ public class DbProcess {
     @Autowired
     JdbcTemplate jdbcTemplate;
 
+    @Autowired
+    TurkishDeasciifier turkishDeasciifier;
+
     TurkishMorphology morphology = TurkishMorphology.createWithDefaults();
 
     public static final String rawJiraSet_summary_50row= "select summary from mss_playground.raw_jira_dataset limit 100";
 
-    public static final String rawJiraSet_instance_50row= "select task_key,summary,assignee,reporter from mss_playground.raw_jira_dataset limit 10";
+    public static final String rawJiraSet_instance_50row= "select task_key,summary,assignee,reporter from mss_playground.raw_jira_dataset limit 100";
 
     public DbProcess() throws IOException {
     }
@@ -46,15 +52,46 @@ public class DbProcess {
     public Map<String, Integer> getWordCount(List<String> list){
 
         Map<String, Integer> counts = list.parallelStream()
-                                          .map(line -> line.replaceAll("[^A-Za-z]"," ")) //replace all non-alpha chars
-                                          .map(String::toLowerCase)
-                                          .flatMap(line -> Arrays.stream(line.trim().split(" "))) //split to words
-                                          .filter(word -> !TurkishStopWords.list.contains(word)) //remove stop words
-                                          .map(line -> getStem(line))
-                                          .collect(Collectors.toConcurrentMap(w -> w, w -> 1, Integer::sum)); //get word count
-
+                .map(line -> line.replaceAll("[^A-Za-z]"," ")) //replace all non-alpha chars
+                .map(String::toLowerCase)
+                .flatMap(line -> Arrays.stream(line.trim().split("\\s+"))) //split to words
+                .filter(word -> !TurkishStopWords.list.contains(word)) //remove stop words
+                .filter(word -> !word.equals("")) //remove null values
+                .filter(word -> word.length() > 1)
+                .map(word -> {
+                    turkishDeasciifier.setAsciiString(word);
+                    return getStem(turkishDeasciifier.convertToTurkish());
+                })
+                .collect(Collectors.toMap(w -> w, w -> 1, Integer::sum));
 
         return counts;
+    }
+
+    public List<String> getCleanedWordList(List<String> list){
+
+
+        List<String> counts = list.parallelStream()
+                .map(line -> line.replaceAll("[^A-Za-z]"," ")) //replace all non-alpha chars
+                .map(String::toLowerCase)
+                .flatMap(line -> Arrays.stream(line.trim().split("\\s+"))) //split to words
+                .filter(word -> !TurkishStopWords.list.contains(word)) //remove stop words
+                .filter(word -> !word.equals("")) //remove null values
+                .filter(word -> word.length() > 1)
+                .collect(Collectors.toList());
+
+        return counts;
+    }
+
+    public Map<String, Integer> getStemAndCount(List<String> wordList){
+
+        List<String> result = new ArrayList<>();
+
+        wordList.forEach(item -> {
+            turkishDeasciifier.setAsciiString(item);
+            result.add(getStem(turkishDeasciifier.convertToTurkish()));
+        });
+
+        return result.stream().collect(Collectors.toMap(w -> w, w -> 1, Integer::sum));
     }
 
     public Map<String, Integer> sortMap(Map<String, Integer> unsortedMap){
@@ -97,14 +134,26 @@ public class DbProcess {
             vectorString.append(instanceModel.getAssignee()+" ");
             vectorString.append(instanceModel.getReporter()+" ");
 
-            Set<String> words = new HashSet<>(Arrays.asList(instanceModel.getSummary().toLowerCase().split(" ")).parallelStream()
+            Set<String> words = new HashSet<>(Arrays.asList(instanceModel.getSummary().toLowerCase().split(" +")).parallelStream()
                     .map(line -> line.replaceAll("[^A-Za-z]"," "))
                     .filter(word -> !TurkishStopWords.list.contains(word)) //remove stop words
-                    .map(line -> getStem(line))
                     .collect(Collectors.toList()));
 
+            words.forEach(System.out::println);
+            System.out.println("\n");
+
+            List<String> result = new ArrayList<>();
+
+            words.forEach(item -> {
+                turkishDeasciifier.setAsciiString(item);
+                result.add(getStem(turkishDeasciifier.convertToTurkish()));
+            });
+
+            result.forEach(System.out::println);
+            System.out.println("\n");
+
             for (Map.Entry<String, Integer> entry : wordCountMap.entrySet()) {
-                if(words.contains(entry.getKey())){
+                if(result.contains(entry.getKey())){
                     vectorString.append(1+" ");
                 }else{
                     vectorString.append(0+" ");

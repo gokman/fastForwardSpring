@@ -2,6 +2,7 @@ package com.nevitech;
 
 import com.nevitech.db.DbProcess;
 import com.nevitech.db.InstanceModel;
+import com.nevitech.nlp.TurkishDeasciifier;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -10,8 +11,14 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+
+import zemberek.morphology.TurkishMorphology;
+import zemberek.morphology.analysis.WordAnalysis;
 
 
 @SpringBootApplication
@@ -37,6 +44,9 @@ public class FastForwardSpringApplication implements CommandLineRunner{
 	@Autowired
 	DbProcess dbProcess;
 
+	@Autowired
+	TurkishDeasciifier turkishDeasciifier;
+
 	@Value("${app.feature.size}")
 	private int featureSize;
 
@@ -45,14 +55,23 @@ public class FastForwardSpringApplication implements CommandLineRunner{
 
 		//raw jira dataset tablosundan veri cek
 		List<String> dbData = dbProcess.getData(DbProcess.rawJiraSet_summary_50row);
-		Map<String, Integer> unsortedWordCountMap = dbProcess.getWordCount(dbData);
-		Map<String, Integer> sortedWordCountMap = dbProcess.sortMap(unsortedWordCountMap);
-		Map<String, Integer> limitedWordCountMap = dbProcess.limitMap(sortedWordCountMap,featureSize);
+		List<String> clearedWordList = dbProcess.getCleanedWordList(dbData);
+		Map<String, Integer> wordCountMap = dbProcess.getStemAndCount(clearedWordList);
+		Map<String, Integer> sortedWordCountMap = dbProcess.sortMap(wordCountMap);
+		Map<String, Integer> limitedWordCountMap = dbProcess.limitMap(sortedWordCountMap, featureSize);
+
+		limitedWordCountMap.forEach((k,v)->System.out.println("Item : " + k + " Count : " + v));
+
 
 		//her jira icin vektor olustur
 		List<InstanceModel> dbInstanceData = dbProcess.getDataWithTaskKey(DbProcess.rawJiraSet_instance_50row);
 		Map<String,String> instances = dbProcess.createInstances(limitedWordCountMap, dbInstanceData);
 
 		instances.entrySet().forEach(System.out::println);
+
+
+		//TurkishMorphology morphology = TurkishMorphology.createWithDefaults();
+		//WordAnalysis result = morphology.analyze(d.convertToTurkish());
+
 	}
 }
