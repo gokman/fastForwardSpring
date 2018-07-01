@@ -21,7 +21,7 @@ import zemberek.morphology.TurkishMorphology;
 import zemberek.morphology.analysis.WordAnalysis;
 
 
-@SpringBootApplication
+//@SpringBootApplication
 public class FastForwardSpringApplication implements CommandLineRunner{
 
 
@@ -29,17 +29,6 @@ public class FastForwardSpringApplication implements CommandLineRunner{
 		SpringApplication.run(FastForwardSpringApplication.class, args);
 	}
 
-	/*@Autowired
-	LibSvmFileGenerator libSvmFileGenerator;
-
-	@Autowired
-	JavaSparkContext javaSparkContext;
-
-	@Autowired
-	SparkContext sparkContext;
-
-	@Autowired
-	SparkSession sparkSession;*/
 
 	@Autowired
 	DbProcess dbProcess;
@@ -60,18 +49,20 @@ public class FastForwardSpringApplication implements CommandLineRunner{
 		Map<String, Integer> sortedWordCountMap = dbProcess.sortMap(wordCountMap);
 		Map<String, Integer> limitedWordCountMap = dbProcess.limitMap(sortedWordCountMap, featureSize);
 
-		limitedWordCountMap.forEach((k,v)->System.out.println("Item : " + k + " Count : " + v));
+		//limitedWordCountMap.forEach((k,v)->System.out.println("Item : " + k + " Count : " + v));
+		int counterMap = 0;
+		for (Map.Entry<String, Integer> entry : limitedWordCountMap.entrySet()) {
+			System.out.println(counterMap + "-->" + "Key : " + entry.getKey() + " Value : " + entry.getValue());
+			counterMap++;
+		}
 
 
 		//her jira icin vektor olustur
 		List<InstanceModel> dbInstanceData = dbProcess.getDataWithTaskKey(DbProcess.rawJiraSet_instance_50row);
 		Map<String,String> instances = dbProcess.createInstances(limitedWordCountMap, dbInstanceData);
 
-		instances.entrySet().forEach(System.out::println);
+		dbProcess.writeMapToFile(instances,"zemberekli.txt");
 
-
-		//TurkishMorphology morphology = TurkishMorphology.createWithDefaults();
-		//WordAnalysis result = morphology.analyze(d.convertToTurkish());
 
 	}
 }

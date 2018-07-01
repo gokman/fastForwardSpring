@@ -7,6 +7,8 @@ import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -32,9 +34,9 @@ public class DbProcess {
 
     TurkishMorphology morphology = TurkishMorphology.createWithDefaults();
 
-    public static final String rawJiraSet_summary_50row= "select summary from mss_playground.raw_jira_dataset limit 100";
+    public static final String rawJiraSet_summary_50row= "select summary from mss_playground.raw_jira_dataset order by created_at desc limit 10000";
 
-    public static final String rawJiraSet_instance_50row= "select task_key,summary,assignee,reporter from mss_playground.raw_jira_dataset limit 100";
+    public static final String rawJiraSet_instance_50row= "select task_key,summary,assignee,reporter from mss_playground.raw_jira_dataset order by created_at desc limit 10000";
 
     public DbProcess() throws IOException {
     }
@@ -75,13 +77,17 @@ public class DbProcess {
                 .map(String::toLowerCase)
                 .flatMap(line -> Arrays.stream(line.trim().split("\\s+"))) //split to words
                 .filter(word -> !TurkishStopWords.list.contains(word)) //remove stop words
-                .filter(word -> !word.equals("")) //remove null values
+                .filter(word -> !word.equals("") || !word.equals(" ") || !word.equals(null)) //remove null values
                 .filter(word -> word.length() > 1)
                 .collect(Collectors.toList());
 
         return counts;
     }
 
+    /**
+     * feature listesi olusturan metot
+     */
+    //TODO tek ve cift harfli olan featurelar haric tutulabilir. incelenip karar verilecek
     public Map<String, Integer> getStemAndCount(List<String> wordList){
 
         List<String> result = new ArrayList<>();
@@ -132,15 +138,15 @@ public class DbProcess {
             StringBuffer vectorString = new StringBuffer();
 
             vectorString.append(instanceModel.getAssignee()+" ");
-            vectorString.append(instanceModel.getReporter()+" ");
+            //vectorString.append(instanceModel.getReporter()+" ");TODO buna simdilik gerek yok
 
             Set<String> words = new HashSet<>(Arrays.asList(instanceModel.getSummary().toLowerCase().split(" +")).parallelStream()
                     .map(line -> line.replaceAll("[^A-Za-z]"," "))
                     .filter(word -> !TurkishStopWords.list.contains(word)) //remove stop words
                     .collect(Collectors.toList()));
 
-            words.forEach(System.out::println);
-            System.out.println("\n");
+            //words.forEach(System.out::println);
+            //System.out.println("\n");
 
             List<String> result = new ArrayList<>();
 
@@ -149,19 +155,48 @@ public class DbProcess {
                 result.add(getStem(turkishDeasciifier.convertToTurkish()));
             });
 
-            result.forEach(System.out::println);
-            System.out.println("\n");
+            //result.forEach(System.out::println);
+            //System.out.println("\n");
 
+            int counter = 1;
             for (Map.Entry<String, Integer> entry : wordCountMap.entrySet()) {
-                if(result.contains(entry.getKey())){
-                    vectorString.append(1+" ");
-                }else{
-                    vectorString.append(0+" ");
+
+                if(counter != 1){//TODO bosluk feature olayi duzelince bu if kalkacak
+                    if(result.contains(entry.getKey())){
+                        vectorString.append(String.valueOf(counter-1)+":" + 1+" ");
+
+                    }else{
+                        vectorString.append(String.valueOf(counter-1)+":" + 0+" ");
+                    }
                 }
+
+                counter++;
             }
 
             instances.put(key,vectorString.toString());
         }
         return instances;
+    }
+
+    /**
+     * parametre olarak verilen map in value larini satir satir dosyaya yazar
+     * @return
+     */
+    public void writeMapToFile(Map<String,String> mapParam, String fileName){
+
+        try (BufferedWriter bw = new BufferedWriter(new FileWriter(fileName))) {
+
+            for (Map.Entry<String, String> entry : mapParam.entrySet()) {
+                //bw.write(entry.getKey() + " " + entry.getValue()+"\n"); //task key ile birlikte dosyaya yazar
+                bw.write(entry.getValue() + "\n");
+
+            }
+
+            System.out.println("yazma bitti =====================");
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
     }
 }

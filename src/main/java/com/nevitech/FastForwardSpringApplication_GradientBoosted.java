@@ -21,7 +21,7 @@ import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
 
 
-@SpringBootApplication
+//@SpringBootApplication
 public class FastForwardSpringApplication_GradientBoosted implements CommandLineRunner{
 
 	public static void main(String[] args) {
@@ -45,7 +45,7 @@ public class FastForwardSpringApplication_GradientBoosted implements CommandLine
 
 
 		// Load and parse the data file, converting it to a DataFrame.
-		Dataset<Row> data = sparkSession.read().format("libsvm").load("fastForward_libsvm_file_jira_60_features.txt");
+		Dataset<Row> data = sparkSession.read().format("libsvm").load("zemberekli.txt");
 
 		// Index labels, adding metadata to the label column.
 		// Fit on whole dataset to include all labels in index.
@@ -58,18 +58,20 @@ public class FastForwardSpringApplication_GradientBoosted implements CommandLine
 		VectorIndexerModel featureIndexer = new VectorIndexer()
 				.setInputCol("features")
 				.setOutputCol("indexedFeatures")
-				.setMaxCategories(4)
+				.setMaxCategories(2)
 				.fit(data);
 
 // Split the data into training and test sets (30% held out for testing)
-		Dataset<Row>[] splits = data.randomSplit(new double[] {0.4, 0.6});
+		Dataset<Row>[] splits = data.randomSplit(new double[] {0.7, 0.3});
 		Dataset<Row> trainingData = splits[0];
 		Dataset<Row> testData = splits[1];
 
 // Train a RandomForest model.
 		RandomForestClassifier rf = new RandomForestClassifier()
 				.setLabelCol("indexedLabel")
-				.setFeaturesCol("indexedFeatures");
+				.setFeaturesCol("indexedFeatures")
+				.setNumTrees(100)
+				.setMaxBins(60);
 
 // Convert indexed labels back to original labels.
 		IndexToString labelConverter = new IndexToString()
@@ -96,6 +98,7 @@ public class FastForwardSpringApplication_GradientBoosted implements CommandLine
 				.setPredictionCol("prediction")
 				.setMetricName("accuracy");
 		double accuracy = evaluator.evaluate(predictions);
+		System.out.println("Basari = " + accuracy);
 		System.out.println("Test Error = " + (1.0 - accuracy));
 
 		RandomForestClassificationModel rfModel = (RandomForestClassificationModel)(model.stages()[2]);
