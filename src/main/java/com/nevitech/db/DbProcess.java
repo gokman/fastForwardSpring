@@ -34,10 +34,20 @@ public class DbProcess {
 
     TurkishMorphology morphology = TurkishMorphology.createWithDefaults();
 
-    public static final String rawJiraSet_summary_50row= "select summary from mss_playground.raw_jira_dataset order by created_at desc limit 10000";
+    public static final String rawJiraSet_summary_50row= "select summary from mss_playground.raw_jira_dataset order by created_at desc limit 50";
 
-    public static final String rawJiraSet_instance_50row= "select task_key,summary,assignee,reporter from mss_playground.raw_jira_dataset order by created_at desc limit 10000";
+    public static final String rawJiraSet_instance_50row= "select task_key,summary,assignee,reporter from mss_playground.raw_jira_dataset order by created_at desc limit 50";
 
+    public static final String rawJiraSet_summary_10000row = "select summary from mss_playground.raw_jira_dataset order by created_at desc limit 10000";
+
+    public static final String rawJiraSet_instance_10000row = "select task_key,summary,assignee,reporter from mss_playground.raw_jira_dataset order by created_at desc limit 10000";
+    public static final String rawJiraSet_summary_10000RowNormalized = "select summary from mss_playground.raw_jira_dataset dts,mss_playground.jira_top_20_assignee ass\n"+
+            "where ass.assignee = dts.assignee\n"+
+            "order by created_at desc limit 10000";
+    public static final String rawJiraSet_instance_10000RowNormalized = "  select dts.task_key,dts.summary,dts.assignee,dts.reporter \n" +
+            "    from mss_playground.raw_jira_dataset dts,mss_playground.jira_top_20_assignee ass \n" +
+            "   where ass.assignee = dts.assignee\n" +
+            "order by created_at desc limit 10000";
     public DbProcess() throws IOException {
     }
 
@@ -114,14 +124,14 @@ public class DbProcess {
                 .stream()
                 .limit(size)
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue,
-                                          (v1,v2) -> v1, LinkedHashMap::new)
-                        );
+                        (v1,v2) -> v1, LinkedHashMap::new)
+                );
     }
 
     public String getStem(String word){
         WordAnalysis result = morphology.analyze(word);
         if(result.getAnalysisResults().size() != 0 )
-        return result.getAnalysisResults().get(0).getStem();
+            return result.getAnalysisResults().get(0).getStem();
         return "";
     }
 

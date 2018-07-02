@@ -21,7 +21,7 @@ import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
 
 
-//@SpringBootApplication
+@SpringBootApplication
 public class FastForwardSpringApplication_GradientBoosted implements CommandLineRunner{
 
 	public static void main(String[] args) {
@@ -45,7 +45,7 @@ public class FastForwardSpringApplication_GradientBoosted implements CommandLine
 
 
 		// Load and parse the data file, converting it to a DataFrame.
-		Dataset<Row> data = sparkSession.read().format("libsvm").load("zemberekli.txt");
+		Dataset<Row> data = sparkSession.read().format("libsvm").load("zemberekli_1000_normalized.txt");
 
 		// Index labels, adding metadata to the label column.
 		// Fit on whole dataset to include all labels in index.
@@ -70,8 +70,10 @@ public class FastForwardSpringApplication_GradientBoosted implements CommandLine
 		RandomForestClassifier rf = new RandomForestClassifier()
 				.setLabelCol("indexedLabel")
 				.setFeaturesCol("indexedFeatures")
-				.setNumTrees(100)
-				.setMaxBins(60);
+				.setNumTrees(300)
+				.setMaxDepth(30)
+				.setMaxBins(100)
+				.setImpurity("gini");
 
 // Convert indexed labels back to original labels.
 		IndexToString labelConverter = new IndexToString()
@@ -102,7 +104,7 @@ public class FastForwardSpringApplication_GradientBoosted implements CommandLine
 		System.out.println("Test Error = " + (1.0 - accuracy));
 
 		RandomForestClassificationModel rfModel = (RandomForestClassificationModel)(model.stages()[2]);
-		System.out.println("Learned classification forest model:\n" + rfModel.toDebugString());
+		//System.out.println("Learned classification forest model:\n" + rfModel.toDebugString());
 
 	}
 }

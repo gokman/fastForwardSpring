@@ -3,7 +3,6 @@ package com.nevitech;
 import com.nevitech.db.DbProcess;
 import com.nevitech.db.InstanceModel;
 import com.nevitech.nlp.TurkishDeasciifier;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
@@ -11,14 +10,9 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
-import zemberek.morphology.TurkishMorphology;
-import zemberek.morphology.analysis.WordAnalysis;
 
 
 //@SpringBootApplication
@@ -43,7 +37,9 @@ public class FastForwardSpringApplication implements CommandLineRunner{
 	public void run(String... args) throws IOException {
 
 		//raw jira dataset tablosundan veri cek
-		List<String> dbData = dbProcess.getData(DbProcess.rawJiraSet_summary_50row);
+		//TODO getData ve getDataWithTask Key looks similar.
+		//TODO We can call getDataWithTaskKey metod inside of getData and return ony summary.
+		List<String> dbData = dbProcess.getData(DbProcess.rawJiraSet_summary_10000RowNormalized);
 		List<String> clearedWordList = dbProcess.getCleanedWordList(dbData);
 		Map<String, Integer> wordCountMap = dbProcess.getStemAndCount(clearedWordList);
 		Map<String, Integer> sortedWordCountMap = dbProcess.sortMap(wordCountMap);
@@ -58,10 +54,10 @@ public class FastForwardSpringApplication implements CommandLineRunner{
 
 
 		//her jira icin vektor olustur
-		List<InstanceModel> dbInstanceData = dbProcess.getDataWithTaskKey(DbProcess.rawJiraSet_instance_50row);
+		List<InstanceModel> dbInstanceData = dbProcess.getDataWithTaskKey(DbProcess.rawJiraSet_instance_10000RowNormalized);
 		Map<String,String> instances = dbProcess.createInstances(limitedWordCountMap, dbInstanceData);
 
-		dbProcess.writeMapToFile(instances,"zemberekli.txt");
+		dbProcess.writeMapToFile(instances,"zemberekli_1000_normalized.txt");
 
 
 	}
